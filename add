@@ -1,0 +1,65 @@
+#!/bin/bash
+
+# Define base directories
+base_series_m_z="/mnt/data4/Series M-Z"
+base_series_a_l="/mnt/data3/Series A-L"
+base_anime="/mnt/data3/Anime"
+base_kids="/mnt/data1/Kids/Series"
+
+# Check if at least one argument is provided (type)
+if [ "$#" -lt 1 ]; then
+    echo "Usage: $0 {series|anime|kids}"
+    exit 1
+fi
+
+# Extract the type
+type=$1
+
+# Read series names from stdin or arguments
+if [ -t 0 ]; then
+    # If stdin is empty, use command-line arguments (if provided)
+    if [ "$#" -lt 2 ]; then
+        echo "Usage: $0 {series|anime|kids} \"Series Name\""
+        exit 1
+    else
+        shift
+        names=("$@")
+    fi
+else
+    # Read from stdin (e.g., piped from ls)
+    mapfile -t names
+fi
+
+# Process each series name
+for name in "${names[@]}"; do
+    # Create the directory based on the type
+    case "$type" in
+        series)
+            # Determine the first letter of the series name
+            first_letter=${name:0:1}
+            if [[ "$first_letter" == [A-La-l] ]]; then
+                dest_dir="$base_series_a_l/$name"
+            else
+                dest_dir="$base_series_m_z/$name"
+            fi
+            ;;
+        anime)
+            dest_dir="$base_anime/$name"
+            ;;
+        kids)
+            dest_dir="$base_kids/$name"
+            ;;
+        *)
+            echo "Invalid type: $type. Valid types are: series, anime, kids"
+            exit 1
+            ;;
+    esac
+
+    # Create the directory if it does not exist
+    if [ ! -d "$dest_dir" ]; then
+        mkdir -p "$dest_dir"
+        echo "Created directory: $dest_dir"
+    else
+        echo "Directory already exists: $dest_dir"
+    fi
+done
